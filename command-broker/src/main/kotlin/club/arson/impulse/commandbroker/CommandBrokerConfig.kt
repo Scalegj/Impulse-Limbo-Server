@@ -16,18 +16,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.inject
+package club.arson.impulse.commandbroker
 
-import club.arson.impulse.api.server.BrokerFactory
-import com.google.inject.Provider
-import io.mockk.every
-import io.mockk.mockk
+import club.arson.impulse.api.config.BrokerConfig
+import kotlinx.serialization.Serializable
 
-class MockFactoriesProvider : Provider<Set<BrokerFactory>> {
-    override fun get(): Set<BrokerFactory> {
-        val mockFactory = mockk<BrokerFactory>()
-        every { mockFactory.provides } returns listOf("test")
-        every { mockFactory.createFromConfig(any(), any()) } returns Result.success(mockk(relaxed = true))
-        return setOf(mockFactory)
-    }
-}
+@BrokerConfig("cmd")
+@Serializable
+data class CommandBrokerConfig(
+    var workingDirectory: String,
+    var command: List<String>,
+    var address: String? = null,
+)

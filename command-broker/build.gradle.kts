@@ -16,18 +16,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.inject
+plugins {
+    kotlin("jvm")
 
-import club.arson.impulse.api.server.BrokerFactory
-import com.google.inject.Provider
-import io.mockk.every
-import io.mockk.mockk
+    `dokka-convention`
+}
+group = "club.arson.impulse"
 
-class MockFactoriesProvider : Provider<Set<BrokerFactory>> {
-    override fun get(): Set<BrokerFactory> {
-        val mockFactory = mockk<BrokerFactory>()
-        every { mockFactory.provides } returns listOf("test")
-        every { mockFactory.createFromConfig(any(), any()) } returns Result.success(mockk(relaxed = true))
-        return setOf(mockFactory)
-    }
+dokka {
+    dokkaSourceSets.configureEach {}
+}
+
+dependencies {
+    implementation(project(":api"))
 }

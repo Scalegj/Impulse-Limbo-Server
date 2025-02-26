@@ -43,6 +43,7 @@ sequenceOf(
     "api",
     "app",
     "docker-broker",
+    "command-broker",
 ).forEach {
     val p = ":$it"
     include(p)
