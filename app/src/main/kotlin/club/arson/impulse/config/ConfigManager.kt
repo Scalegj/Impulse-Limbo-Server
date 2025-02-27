@@ -26,6 +26,7 @@ import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.events.ConfigReloadEvent
 import club.arson.impulse.inject.modules.PluginDir
 import com.charleskorn.kaml.*
+import com.google.inject.Inject
 import com.velocitypowered.api.event.ResultedEvent.GenericResult
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
@@ -33,11 +34,10 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializerOrNull
 import org.slf4j.Logger
+import java.io.IOException
 import java.nio.file.*
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
 import kotlin.reflect.KClass
@@ -57,7 +57,8 @@ class ConfigManager @Inject constructor(
     private val proxy: ProxyServer,
     plugin: Impulse,
     @PluginDir private val configDirectory: Path,
-    private val logger: Logger
+    private val logger: Logger,
+    reloadOnInit: Boolean = true
 ) {
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -79,10 +80,8 @@ class ConfigManager @Inject constructor(
      */
     init {
         watchTask = proxy.scheduler.buildTask(plugin, this::watchTask).repeat(5, TimeUnit.SECONDS).schedule()
+        createDefaultConfigFileIfMissing()
         runCatching {
-            if (!configDirectory.exists()) {
-                configDirectory.createDirectories()
-            }
             configDirectory.register(
                 watchService,
                 StandardWatchEventKinds.ENTRY_MODIFY,
@@ -90,10 +89,38 @@ class ConfigManager @Inject constructor(
             )
         }.onFailure {
             logger.error("ConfigManager: Failed to register watcher: ${it.message}")
-            logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
+            logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory ($configDirectory)")
             logger.error("ConfigManager: Please correct this and restart the proxy!")
         }.onSuccess {
-            fireAndReload()
+            if (reloadOnInit) {
+                fireAndReload()
+            }
+        }
+    }
+
+    private fun createDefaultConfigFileIfMissing() {
+        try {
+            // toFile to work around mocking issues with the Path API
+            if (!configDirectory.toFile().exists()) {
+                configDirectory.createDirectories()
+            }
+        } catch (e: IOException) {
+            logger.error("ConfigManager: Unable to create the config directory: ${e.message}")
+            logger.error("ConfigManager: Please make sure that Impulse has permission to create the config directory.")
+            return
+        }
+
+        val configFile = configDirectory.resolve(CONFIG_FILE_NAME)
+        try {
+            // toFile to work around mocking issues with the Path API
+            if (!configFile.toFile().exists()) {
+                val defaultConfig = Configuration()
+                val yamlString = yaml.encodeToString(Configuration.serializer(), defaultConfig)
+                configFile.toFile().writeText(yamlString)
+            }
+        } catch (e: IOException) {
+            logger.warn("ConfigManager: Unable to create the default config file: ${e.message}")
+            logger.warn("ConfigManager: Please either create the file manually or give Impulse write permissions to $configDirectory")
         }
     }
 
@@ -243,13 +270,15 @@ class ConfigManager @Inject constructor(
                     configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                 }
         }.onFailure {
-            if (it is EmptyYamlDocumentException) {
-                logger.warn("ConfigManager: Config file is empty, using default configuration")
-                logger.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/")
+            if (it is EmptyYamlDocumentException || it is IOException) {
+                logger.warn("ConfigManager: Config file is empty or missing, using default configuration")
+                logger.warn("ConfigManager: Please make sure that Impulse has permission to read the config file.")
+                logger.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/getting_started/index.html")
+                configEvent = ConfigReloadEvent(Configuration(), liveConfig, GenericResult.allowed())
             } else {
                 logger.error("ConfigManager: Failed to parse config file: ${it.message}")
+                configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
             }
-            configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
 
         proxy.eventManager.fire(configEvent).thenAccept { event ->
