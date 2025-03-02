@@ -22,7 +22,7 @@ import club.arson.impulse.api.config.Configuration
 import club.arson.impulse.api.events.ConfigReloadEvent
 import club.arson.impulse.config.ConfigManager
 import club.arson.impulse.inject.modules.BaseModule
-import com.google.inject.AbstractModule
+import club.arson.impulse.inject.modules.ConfigManagerModule
 import com.google.inject.Guice
 import com.velocitypowered.api.event.EventManager
 import com.velocitypowered.api.event.ResultedEvent.GenericResult
@@ -39,12 +39,6 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.inputStream
 import kotlin.test.assertEquals
 
-class ConfigManagerTestModule(val reloadOnInit: Boolean) : AbstractModule() {
-    override fun configure() {
-        bind(Boolean::class.java).toInstance(reloadOnInit)
-    }
-}
-
 class ConfigManagerTest {
     private fun getConfigManager(
         proxy: ProxyServer = mockk(relaxed = true),
@@ -54,7 +48,7 @@ class ConfigManagerTest {
         logger: Logger = mockk(relaxed = true)
     ): ConfigManager {
         val injector =
-            Guice.createInjector(BaseModule(plugin, proxy, configPath, logger), ConfigManagerTestModule(reloadOnInit))
+            Guice.createInjector(BaseModule(plugin, proxy, configPath, logger), ConfigManagerModule(reloadOnInit))
         return injector.getInstance(ConfigManager::class.java)
     }
 

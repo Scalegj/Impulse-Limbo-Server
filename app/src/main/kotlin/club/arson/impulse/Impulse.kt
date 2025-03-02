@@ -23,6 +23,7 @@ import club.arson.impulse.commands.createImpulseCommand
 import club.arson.impulse.config.ConfigManager
 import club.arson.impulse.inject.modules.BaseModule
 import club.arson.impulse.inject.modules.BrokerModule
+import club.arson.impulse.inject.modules.ConfigManagerModule
 import club.arson.impulse.server.ServerManager
 import com.google.inject.Guice
 import com.google.inject.Inject
@@ -88,7 +89,7 @@ class Impulse @Inject constructor(
         ServiceRegistry.instance.injector = Guice.createInjector(
             BrokerModule(logger), BaseModule(
                 this, proxy, dataDirectory, logger
-            )
+            ), ConfigManagerModule(true)
         )
 
         ServiceRegistry.instance.configManager =
