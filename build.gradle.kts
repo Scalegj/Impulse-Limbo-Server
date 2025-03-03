@@ -143,6 +143,7 @@ tasks.register<Jar>("combinedDistributionShadowJar") {
 
     dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
     dependsOn(":command-broker:jar") // Hack to make github happy
+    dependsOn(":api:jar") // Hack to make github happy
     from(combinedDistributionProjects.map { p ->
         project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
     }.map { zipTree(it) })
