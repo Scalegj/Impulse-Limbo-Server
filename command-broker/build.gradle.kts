@@ -17,26 +17,18 @@
  */
 
 plugins {
-    kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-
-    `dokka-convention`
+    conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.jar
 }
+
 group = "club.arson.impulse"
-
-dokka {
-    dokkaSourceSets.configureEach {}
-}
 
 dependencies {
     implementation(project(":api"))
 }
 
-tasks {
-    shadowJar {
-        dependsOn(":api:shadowJar")
-        manifest {}
-        from(sourceSets.main.get().output)
-        archiveClassifier.set("")
-    }
+impulsePublish {
+    artifact = tasks.named("jar").get()
+    description = "Raw command and JAR based brokers for Impulse."
 }

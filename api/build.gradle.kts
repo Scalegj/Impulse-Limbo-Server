@@ -17,26 +17,21 @@
  */
 
 plugins {
-    kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.jar
 
-    `dokka-convention`
     `java-library`
 }
-group = "club.arson.impulse"
 
-dokka {
-    dokkaSourceSets.configureEach {}
-}
+group = "club.arson.impulse"
 
 java {
     withSourcesJar()
 }
 
-tasks {
-    shadowJar {
-        manifest {}
-        from(sourceSets.main.get().output)
-        archiveClassifier.set("")
-    }
+impulsePublish {
+    artifact = tasks.named("jar").get()
+    description = "API library for extending Impulse with your own plugins."
 }
+

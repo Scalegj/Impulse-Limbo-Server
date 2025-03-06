@@ -16,16 +16,14 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 group = "club.arson"
 
 plugins {
-    kotlin("jvm")
-    kotlin("kapt")
-    kotlin("plugin.serialization") version "2.1.20-RC"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("jacoco")
-    `dokka-convention`
-    `maven-publish`
+    conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.`shadow-jar`
 }
 
 dependencies {
@@ -39,152 +37,31 @@ dependencies {
     }
 }
 
-subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.kotlin.kapt")
-    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
-    apply(plugin = "com.github.johnrengelman.shadow")
-    apply(plugin = "maven-publish")
-    apply(plugin = "jacoco")
-
-    dependencies {
-        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-        kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-
-        implementation("com.charleskorn.kaml:kaml:0.72.0")
-        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    }
-
-    val targetJavaVersion = 17
-    kotlin {
-        jvmToolchain(targetJavaVersion)
-    }
-
-    jacoco {
-        toolVersion = "0.8.12"
-    }
-
-    tasks.jacocoTestReport {
-        dependsOn(tasks.test)
-
-        reports {
-            xml.required.set(true)
-            html.required.set(false)
-        }
-    }
-
-    tasks.test {
-        useJUnitPlatform()
-
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
-
-        reports {
-            junitXml.required.set(true)
-            html.required.set(false)
-        }
-    }
-
-    publishing {
-        publications {
-            create<MavenPublication>("shadowJarPublication") {
-                artifact(tasks.named("shadowJar").get())
-
-                groupId = "club.arson.impulse"
-                artifactId = project.name
-                version = project.version.toString()
-
-                pom {
-                    name = project.name
-                    url = "https://github.com/Arson-Club/Impulse"
-                    licenses {
-                        license {
-                            name = "GNU Affero General Public License"
-                            url = "https://www.gnu.org/licenses/"
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = "dabb1e"
-                            name = "Dabb1e"
-                            email = "dabb1e@arson.club"
-                        }
-                    }
-                }
-            }
-        }
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
-    }
-}
-
 val combinedDistributionProjects = listOf(
-    Pair("api", "shadowJar"),
+    Pair("api", "jar"),
     Pair("app", "shadowJar"),
     Pair("docker-broker", "shadowJar"),
-    Pair("command-broker", "shadowJar"),
+    Pair("command-broker", "jar"),
 )
 
-tasks.register<Jar>("combinedDistributionShadowJar") {
-    group = "build"
-    description = "Builds the release jar combining the base app and core brokers"
-    archiveBaseName.set("impulse")
-    archiveClassifier.set("")
+tasks.withType<ShadowJar>().configureEach {
+    archiveBaseName = "impulse"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
-    dependsOn(":command-broker:jar") // Hack to make github happy
-    dependsOn(":api:jar") // Hack to make github happy
-    from(combinedDistributionProjects.map { p ->
-        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
-    }.map { zipTree(it) })
+    combinedDistributionProjects.forEach { (projectName, taskName) ->
+        dependsOn(":$projectName:$taskName")
+        from(provider { project(":$projectName").tasks.named(taskName).get().outputs.files })
+    }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
-            groupId = "club.arson"
-            artifactId = project.name
-            version = project.version.toString()
-
-            pom {
-                name = project.name
-                description = "Impulse Server Manager for Velocity"
-                url = "https://github.com/Arson-Club/Impulse"
-                licenses {
-                    license {
-                        name = "GNU Affero General Public License"
-                        url = "https://www.gnu.org/licenses/"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "dabb1e"
-                        name = "Dabb1e"
-                        email = "dabb1e@arson.club"
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+impulsePublish {
+    artifact = tasks.named("shadowJar").get()
+    groupId = "club.arson"
+    description = "Impulse Server Manager for Velocity. Full distribution (all default brokers)."
+    licenses = listOf(
+        impulseLicense,
+        kamlLicense,
+        classGraphLicense,
+        dockerLicense
+    )
 }

@@ -18,12 +18,16 @@
 
 plugins {
     `kotlin-dsl`
-    kotlin("jvm") version "2.1.20-RC"
-    kotlin("kapt") version "2.1.20-RC"
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10")
-    val dokkaVersion = providers.gradleProperty("dokkaVersion").getOrElse("2.0.0")
-    implementation("org.jetbrains.dokka:dokka-gradle-plugin:$dokkaVersion")
+    implementation(libs.kotlinGradlePlugin)
+    implementation(libs.dokkaGradlePlugin)
+    implementation(libs.shadow)
+    implementation(libs.kotlinSerializationPlugin)
+    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }

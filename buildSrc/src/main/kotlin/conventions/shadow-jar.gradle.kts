@@ -16,32 +16,48 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+package conventions
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    conventions.`impulse-base`
-    conventions.`impulse-publish`
-    conventions.`shadow-jar`
-}
-group = "club.arson.impulse"
-
-dependencies {
-    implementation(libs.bundles.docker)
-    implementation(libs.kotlinxCoroutines)
-    implementation(project(":api"))
+    id("com.gradleup.shadow")
 }
 
 tasks.withType<ShadowJar>().configureEach {
-    relocate("com.github.docker-java", "club.arson.impulse.docker-java")
-    relocate("org.jetbrains.kotlinx", "club.arson.impulse.kotlinx")
+    archiveClassifier.set("")
+    mergeServiceFiles()
+
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+                "Implementation-Vendor" to "Arson Club"
+            )
+        )
+    }
+
+    relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
+
+    minimize {
+        exclude(dependency("org.jetbrains.kotlin:.*:.*"))
+    }
+
+    exclude("META-INF/*.SF")
+    exclude("META-INF/*.DSA")
+    exclude("META-INF/*.RSA")
+
+    isReproducibleFileOrder = true
+    isPreserveFileTimestamps = false
+
+    dependsOn(":api:jar")
 }
 
-impulsePublish {
-    artifact = tasks.named("shadowJar").get()
-    description = "Docker broker for Impulse."
-    licenses = listOf(
-        impulseLicense,
-        kamlLicense,
-        dockerLicense
-    )
+tasks.named("build") {
+    dependsOn("shadowJar")
+}
+
+tasks.named("jar") {
+    enabled = false
 }
