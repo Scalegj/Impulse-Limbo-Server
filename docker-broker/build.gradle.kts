@@ -32,6 +32,7 @@ dependencies {
 }
 
 tasks.withType<ShadowJar>().configureEach {
+    description = "Docker broker for Impulse."
     relocate("com.github.docker-java", "club.arson.impulse.docker-java")
     relocate("org.jetbrains.kotlinx", "club.arson.impulse.kotlinx")
 }

@@ -28,6 +28,10 @@ dependencies {
     implementation(project(":api"))
 }
 
+tasks.withType<Jar>().configureEach {
+    description = "Raw command and JAR based brokers for Impulse."
+}
+
 impulsePublish {
     artifact = tasks.named("jar").get()
     description = "Raw command and JAR based brokers for Impulse."

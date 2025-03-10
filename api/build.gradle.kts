@@ -30,6 +30,10 @@ java {
     withSourcesJar()
 }
 
+tasks.withType<Jar>().configureEach {
+    description = "API library for extending Impulse with your own plugins."
+}
+
 impulsePublish {
     artifact = tasks.named("jar").get()
     description = "API library for extending Impulse with your own plugins."

@@ -52,6 +52,7 @@ sourceSets.main.configure { java.srcDir(generateTemplates.map { it.outputs }) }
 project.eclipse.synchronizationTasks(generateTemplates)
 
 tasks.withType<ShadowJar>().configureEach {
+    description = "Lite distribution of Impulse without any bundled brokers."
     relocate("org.jetbrains.kotlin", "club.arson.impulse.kotlin")
     relocate("io.github.classgraph", "club.arson.impulse.classgraph")
     archiveBaseName = "impulse-lite"

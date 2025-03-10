@@ -16,14 +16,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 group = "club.arson"
 
 plugins {
     conventions.`impulse-base`
     conventions.`impulse-publish`
-    conventions.`shadow-jar`
+    conventions.jar
 }
 
 dependencies {
@@ -44,18 +42,19 @@ val combinedDistributionProjects = listOf(
     Pair("command-broker", "jar"),
 )
 
-tasks.withType<ShadowJar>().configureEach {
+tasks.withType<Jar>().configureEach {
     archiveBaseName = "impulse"
+    description = "Impulse Server Manager for Velocity. Full distribution (all default brokers)."
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn(combinedDistributionProjects.map { (projectName, target) -> ":${projectName}:${target}" })
 
-    combinedDistributionProjects.forEach { (projectName, taskName) ->
-        dependsOn(":$projectName:$taskName")
-        from(provider { project(":$projectName").tasks.named(taskName).get().outputs.files })
-    }
+    from(combinedDistributionProjects.map { (projectName, target) ->
+        provider { project(projectName).tasks.named(target).map { (it as Jar).archiveFile.get().asFile } }
+    }.map { zipTree(it) })
 }
 
 impulsePublish {
-    artifact = tasks.named("shadowJar").get()
+    artifact = tasks.named("jar").get()
     groupId = "club.arson"
     description = "Impulse Server Manager for Velocity. Full distribution (all default brokers)."
     licenses = listOf(
