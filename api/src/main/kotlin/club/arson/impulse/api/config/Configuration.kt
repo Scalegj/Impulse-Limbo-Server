@@ -27,11 +27,13 @@ import kotlinx.serialization.Serializable
  * @property servers A list of server configurations. See [ServerConfig]
  * @property serverMaintenanceInterval The interval in seconds between server maintenance tasks
  * @property messages Messages to be displayed to players. See [Messages]
+ * @property limboServerName The name of the fallback/limbo server (must match a server in Velocity config, Limbo is automatically enabled if this is set)
  */
 @Serializable
 data class Configuration(
     var instanceName: String = "velocity",
     var servers: List<ServerConfig> = listOf(),
     var serverMaintenanceInterval: Long = 300,
-    var messages: Messages = Messages()
+    var messages: Messages = Messages(),
+    var limboServerName: String? = null // Name of the fallback/limbo server, automatically enables Limbo if set
 )

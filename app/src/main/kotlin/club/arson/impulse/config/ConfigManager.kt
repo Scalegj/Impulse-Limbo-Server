@@ -62,7 +62,7 @@ class ConfigManager @Inject constructor(
 ) {
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
-    private var liveConfig: Configuration = Configuration()
+    var liveConfig: Configuration = Configuration()
     private val yaml = Yaml(configuration = Yaml.default.configuration.copy())
 
     /**

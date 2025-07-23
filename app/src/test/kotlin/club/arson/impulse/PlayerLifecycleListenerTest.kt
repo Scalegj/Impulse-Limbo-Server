@@ -26,6 +26,8 @@ import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.server.RegisteredServer
+import com.velocitypowered.api.proxy.ProxyServer
+import club.arson.impulse.Impulse
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -39,11 +41,15 @@ import java.util.*
 class PlayerLifecycleListenerTest {
     private lateinit var playerLifecycleListener: PlayerLifecycleListener
     private lateinit var logger: Logger
+    private lateinit var proxy: ProxyServer
+    private lateinit var plugin: Impulse
 
     @BeforeEach
     fun setUp() {
         logger = mockk<Logger>(relaxed = true)
-        playerLifecycleListener = PlayerLifecycleListener(logger)
+        proxy = mockk<ProxyServer>(relaxed = true)
+        plugin = mockk<Impulse>(relaxed = true)
+        playerLifecycleListener = PlayerLifecycleListener(logger, proxy, plugin)
         ServiceRegistry.instance.reset()
     }
 

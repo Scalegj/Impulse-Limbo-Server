@@ -98,7 +98,7 @@ class Impulse @Inject constructor(
             ServiceRegistry.instance.injector!!.getInstance(ServerManager::class.java)
         proxy.eventManager.register(
             this,
-            ServiceRegistry.instance.injector!!.getInstance(PlayerLifecycleListener::class.java)
+            PlayerLifecycleListener(logger, proxy, this)
         )
 
         // Register custom commands

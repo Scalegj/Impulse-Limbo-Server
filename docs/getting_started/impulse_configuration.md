@@ -8,7 +8,10 @@ If it does not exist you can create it. For our simple SMP we can keep most of t
 
 ```yaml
 instanceName: MyCoolSMP
+limboServerName: limbo  # Name of the fallback/limbo server (must match a server in your Velocity config)
 ```
+
+The `limboServerName` option lets you specify the name of the fallback server that players will be sent to while their destination server is starting. This should match the name of a server defined in your `velocity.toml` and should always be online.
 
 The instance name is used internally by Impulse to identify your Velocity server. This is necessary for some brokers
 that may be managing servers for multiple Velocity instances. It should be unique per Velocity server.
